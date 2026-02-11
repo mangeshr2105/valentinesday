@@ -202,6 +202,14 @@ export default function ValentinePage({ params }) {
             opacity: 0;
           }
         }
+        @keyframes floatUpDown {
+          0%, 100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+        }
         .floating-heart {
           position: absolute;
           bottom: -40px;
@@ -277,7 +285,8 @@ export default function ValentinePage({ params }) {
           backgroundClip: 'text',
           textShadow: 'none',
           maxWidth: '95vw',
-          margin: '0 auto 4rem auto'
+          margin: '0 auto 4rem auto',
+          animation: 'floatUpDown 3s ease-in-out infinite'
         }}>
           {formattedName}, will you be my Valentine? ❤️
         </h1>

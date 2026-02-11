@@ -230,6 +230,14 @@ export default function YesPage({ params }) {
             opacity: 0;
           }
         }
+        @keyframes floatUpDown {
+          0%, 100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+        }
         .floating-heart {
           position: absolute;
           bottom: -40px;
@@ -294,7 +302,9 @@ export default function YesPage({ params }) {
         />
 
 
-        <h1 className="title">
+        <h1 className="title" style={{
+          animation: 'floatUpDown 3s ease-in-out infinite'
+        }}>
           YAY!<br />
           {formattedName} said YES 💘🎉
         </h1>
