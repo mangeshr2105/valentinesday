@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export default function RootLayout({ children }) {
   const pathname = usePathname()
@@ -67,6 +68,7 @@ export default function RootLayout({ children }) {
         <div className={`page-transition-container ${isTransitioning ? 'page-transition-enter' : ''}`}>
           {children}
         </div>
+        <SpeedInsights />
       </body>
     </html>
   )
