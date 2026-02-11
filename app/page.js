@@ -53,7 +53,7 @@ export default function Home() {
       ))}
 
       <h1 style={styles.title} className="fadeIn titleFloat">
-        Welcome to <span style={{ color: "#8b0000", textShadow: "0 0 20px rgba(139, 0, 0, 0.8), 0 0 40px rgba(255, 107, 157, 0.6), 0 0 60px rgba(255, 107, 157, 0.4)" }}>Valentine&apos;s Day</span> App ❤️
+        Welcome to <span style={{ color: "#8b0000", textShadow: "0 0 20px rgba(139, 0, 0, 0.8), 0 0 40px rgba(255, 107, 157, 0.6), 0 0 60px rgba(255, 107, 157, 0.4)" }}>Valentine&apos;s Day</span> Website ❤️
       </h1>
 
       <p style={styles.subtitle} className="fadeIn delay">
