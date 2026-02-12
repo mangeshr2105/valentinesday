@@ -61,7 +61,8 @@ export default function ValentinePage({ params }) {
   // Save button statistics to server
   const saveButtonStats = async () => {
     try {
-      await fetch('/api/button-stats', {
+      console.log('Saving button stats:', { name: formattedName, stats: buttonStats });
+      const response = await fetch('/api/button-stats', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -71,6 +72,11 @@ export default function ValentinePage({ params }) {
           stats: buttonStats 
         }),
       });
+      if (response.ok) {
+        console.log('Button stats saved successfully');
+      } else {
+        console.error('Failed to save button stats:', response.status);
+      }
     } catch (error) {
       console.error('Error saving button stats:', error);
     }
@@ -88,6 +94,20 @@ export default function ValentinePage({ params }) {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [formattedName, buttonStats]);
+
+  const handleYesClick = () => {
+    // Mark yes as pressed
+    setButtonStats(prev => ({ 
+      ...prev, 
+      yesPressed: true 
+    }))
+    
+    // Save stats immediately when yes is pressed
+    setTimeout(() => {
+      saveButtonStats()
+      router.push(`/${encodeURIComponent(name)}/yes`)
+    }, 100)
+  }
 
   const moveButtonToRandomPosition = () => {
     if (escapeLock.current) return

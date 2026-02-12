@@ -48,12 +48,14 @@ export default function Admin() {
 
   const fetchButtonStats = async () => {
     try {
+      console.log('Fetching button stats...');
       const response = await fetch('/api/button-stats');
       if (response.ok) {
         const data = await response.json()
+        console.log('Button stats received:', data);
         setButtonStats(data.stats || [])
       } else {
-        console.error('Failed to fetch button stats')
+        console.error('Failed to fetch button stats:', response.status)
       }
     } catch (err) {
       console.error('Error fetching button stats:', err)
