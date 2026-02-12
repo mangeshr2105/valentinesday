@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { kv } from '@vercel/kv';
 
 export async function POST(request) {
   try {
@@ -9,16 +8,18 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
 
-    // Get existing names from KV
+    // Get existing names from KV if available
     let names = [];
-    try {
-      const storedNames = await kv.get('valentine_names');
-      if (storedNames) {
-        names = storedNames;
+    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+      try {
+        const { kv } = await import('@vercel/kv');
+        const storedNames = await kv.get('valentine_names');
+        if (storedNames) {
+          names = storedNames;
+        }
+      } catch (kvError) {
+        console.error('KV get error:', kvError);
       }
-    } catch (kvError) {
-      console.error('KV get error:', kvError);
-      // Continue with empty array if KV fails
     }
 
     const newEntry = {
@@ -38,28 +39,31 @@ export async function POST(request) {
       names = names.slice(0, 1000);
     }
 
-    // Store back to KV
-    try {
-      await kv.set('valentine_names', names);
-    } catch (kvError) {
-      console.error('KV set error:', kvError);
-      // Fallback to file system for local development
-      if (process.env.NODE_ENV === 'development') {
-        try {
-          const fs = require('fs');
-          const path = require('path');
-          const dataDir = path.join(process.cwd(), 'data');
-          
-          if (!fs.existsSync(dataDir)) {
-            fs.mkdirSync(dataDir, { recursive: true });
+    // Store back to KV if available
+    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+      try {
+        const { kv } = await import('@vercel/kv');
+        await kv.set('valentine_names', names);
+      } catch (kvError) {
+        console.error('KV set error:', kvError);
+        // Fallback to file system for local development
+        if (process.env.NODE_ENV === 'development') {
+          try {
+            const fs = require('fs');
+            const path = require('path');
+            const dataDir = path.join(process.cwd(), 'data');
+            
+            if (!fs.existsSync(dataDir)) {
+              fs.mkdirSync(dataDir, { recursive: true });
+            }
+            
+            fs.writeFileSync(
+              path.join(dataDir, 'names.json'),
+              JSON.stringify(names, null, 2)
+            );
+          } catch (fsError) {
+            console.error('File system fallback error:', fsError);
           }
-          
-          fs.writeFileSync(
-            path.join(dataDir, 'names.json'),
-            JSON.stringify(names, null, 2)
-          );
-        } catch (fsError) {
-          console.error('File system fallback error:', fsError);
         }
       }
     }
@@ -67,7 +71,8 @@ export async function POST(request) {
     return NextResponse.json({ 
       success: true, 
       message: 'Name stored successfully',
-      entry: newEntry 
+      entry: newEntry,
+      storage: process.env.KV_REST_API_URL ? 'kv' : 'none'
     });
   } catch (error) {
     console.error('API Error:', error);
@@ -79,14 +84,17 @@ export async function GET() {
   try {
     let names = [];
     
-    // Try to get from KV first
-    try {
-      const storedNames = await kv.get('valentine_names');
-      if (storedNames) {
-        names = storedNames;
+    // Try to get from KV if available
+    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+      try {
+        const { kv } = await import('@vercel/kv');
+        const storedNames = await kv.get('valentine_names');
+        if (storedNames) {
+          names = storedNames;
+        }
+      } catch (kvError) {
+        console.error('KV get error:', kvError);
       }
-    } catch (kvError) {
-      console.error('KV get error:', kvError);
     }
     
     // Fallback to file system for development
@@ -114,22 +122,25 @@ export async function GET() {
 
 export async function DELETE() {
   try {
-    // Clear in KV
-    try {
-      await kv.set('valentine_names', []);
-    } catch (kvError) {
-      console.error('KV delete error:', kvError);
-      
-      // Fallback to file system for development
-      if (process.env.NODE_ENV === 'development') {
-        try {
-          const fs = require('fs');
-          const path = require('path');
-          const dataFile = path.join(process.cwd(), 'data', 'names.json');
-          
-          fs.writeFileSync(dataFile, JSON.stringify([], null, 2));
-        } catch (fsError) {
-          console.error('File system fallback error:', fsError);
+    // Clear in KV if available
+    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+      try {
+        const { kv } = await import('@vercel/kv');
+        await kv.set('valentine_names', []);
+      } catch (kvError) {
+        console.error('KV delete error:', kvError);
+        
+        // Fallback to file system for development
+        if (process.env.NODE_ENV === 'development') {
+          try {
+            const fs = require('fs');
+            const path = require('path');
+            const dataFile = path.join(process.cwd(), 'data', 'names.json');
+            
+            fs.writeFileSync(dataFile, JSON.stringify([], null, 2));
+          } catch (fsError) {
+            console.error('File system fallback error:', fsError);
+          }
         }
       }
     }
