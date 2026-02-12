@@ -17,6 +17,31 @@ export default function YesPage({ params }) {
   const [floatingHearts, setFloatingHearts] = useState([])
 
   useEffect(() => {
+    // Track that user reached the Yes page
+    const trackYesButton = async () => {
+      try {
+        console.log('Tracking Yes button for:', formattedName);
+        const response = await fetch('/api/track-yes', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name: formattedName }),
+        });
+        
+        if (response.ok) {
+          console.log('Yes button tracked successfully');
+        } else {
+          console.error('Failed to track Yes button');
+        }
+      } catch (error) {
+        console.error('Error tracking Yes button:', error);
+      }
+    };
+
+    // Track immediately when page loads
+    trackYesButton();
+
     // Initialize floating hearts
     const hearts = Array.from({ length: 12 }).map((_, i) => ({
       id: i,
@@ -27,7 +52,7 @@ export default function YesPage({ params }) {
       emoji: ['❤️', '💖', '💕', '💗', '💓', '💝'][Math.floor(Math.random() * 6)]
     }))
     setFloatingHearts(hearts)
-  }, [])
+  }, [formattedName])
 
   useEffect(() => {
     // If user reloaded /[name]/yes (referrer is the same page), send them back to /[name].

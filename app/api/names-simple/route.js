@@ -114,7 +114,23 @@ export async function GET() {
       }
     }
 
-    console.log('Names retrieved:', names);
+    // Check for global yes tracking data and merge it
+    if (global.yesButtonTracking) {
+      console.log('Found global yes tracking data:', global.yesButtonTracking);
+      names = names.map(entry => {
+        const yesData = global.yesButtonTracking[entry.name];
+        if (yesData && yesData.yesPressed) {
+          return {
+            ...entry,
+            yesPressed: true,
+            lastUpdated: yesData.timestamp
+          };
+        }
+        return entry;
+      });
+    }
+
+    console.log('Names retrieved with yes tracking:', names);
     return NextResponse.json({ names });
   } catch (error) {
     console.error('API Error:', error);
