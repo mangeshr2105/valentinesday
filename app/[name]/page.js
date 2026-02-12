@@ -65,6 +65,7 @@ export default function ValentinePage({ params }) {
       localStorage.setItem(`valentine_stats_${formattedName}`, JSON.stringify(buttonStats));
       
       console.log('Saving button stats:', { name: formattedName, stats: buttonStats });
+      console.log('Current buttonStats state:', buttonStats);
       const response = await fetch('/api/names-simple', {
         method: 'POST',
         headers: {
@@ -226,19 +227,18 @@ export default function ValentinePage({ params }) {
     }
     
     // Track button state change (when button text changes)
-    setButtonStats(prev => { 
-      const newStats = { 
-        ...prev, 
-        noStateChanges: prev.noStateChanges + 1 
-      };
-      
-      // Save stats immediately after state change
-      setTimeout(() => {
-        saveButtonStats();
-      }, 100);
-      
-      return newStats;
-    })
+    const newStats = { 
+      ...buttonStats, 
+      noStateChanges: buttonStats.noStateChanges + 1 
+    };
+    
+    // Update state immediately and wait for it to update
+    setButtonStats(newStats);
+    
+    // Save stats immediately after state update
+    setTimeout(() => {
+      saveButtonStats();
+    }, 50); // Shorter delay to ensure state update
     
     e.preventDefault()
     // Move button on click for both desktop and mobile
