@@ -7,7 +7,6 @@ export default function Admin() {
   const [names, setNames] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [buttonStats, setButtonStats] = useState([])
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState('')
   const router = useRouter()
@@ -20,7 +19,6 @@ export default function Admin() {
     if (auth === 'true') {
       setIsAuthenticated(true)
       fetchNames()
-      fetchButtonStats()
     }
   }, [])
 
@@ -36,6 +34,7 @@ export default function Admin() {
       if (response.ok) {
         const data = await response.json()
         setNames(data.names || [])
+        console.log('Names with button stats:', data.names);
       } else {
         setError('Failed to fetch names')
       }
@@ -43,22 +42,6 @@ export default function Admin() {
       setError('Error fetching names')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const fetchButtonStats = async () => {
-    try {
-      console.log('Fetching button stats...');
-      const response = await fetch('/api/button-stats');
-      if (response.ok) {
-        const data = await response.json()
-        console.log('Button stats received:', data);
-        setButtonStats(data.stats || [])
-      } else {
-        console.error('Failed to fetch button stats:', response.status)
-      }
-    } catch (err) {
-      console.error('Error fetching button stats:', err)
     }
   }
 
@@ -295,7 +278,7 @@ export default function Admin() {
         </div>
 
         {/* Button Statistics Section */}
-        {buttonStats.length > 0 && (
+        {names.some(name => name.noPresses !== undefined || name.yesPressed !== undefined) && (
           <div style={{
             background: 'linear-gradient(145deg, #e0e7ff 0%, #c7d2fe 100%)',
             padding: '20px',
@@ -330,12 +313,12 @@ export default function Admin() {
                     <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Name</th>
                     <th style={{ padding: '12px', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>No Presses</th>
                     <th style={{ padding: '12px', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>Yes Pressed</th>
-                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Last Updated</th>
+                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Time</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {buttonStats.map((stat, index) => (
-                    <tr key={stat.name} style={{
+                  {names.filter(name => name.noPresses !== undefined || name.yesPressed !== undefined).map((entry, index) => (
+                    <tr key={entry.id} style={{
                       background: index % 2 === 0 ? 'white' : '#f9fafb'
                     }}>
                       <td style={{ 
@@ -344,15 +327,15 @@ export default function Admin() {
                         fontWeight: '600',
                         color: '#1e293b'
                       }}>
-                        {stat.name}
+                        {entry.name}
                       </td>
                       <td style={{ 
                         padding: '12px', 
                         textAlign: 'center',
                         borderBottom: '1px solid #e5e7eb',
-                        color: stat.noPresses > 0 ? '#dc2626' : '#6b7280'
+                        color: entry.noPresses > 0 ? '#dc2626' : '#6b7280'
                       }}>
-                        {stat.noPresses}
+                        {entry.noPresses || 0}
                       </td>
                       <td style={{ 
                         padding: '12px', 
@@ -360,14 +343,14 @@ export default function Admin() {
                         borderBottom: '1px solid #e5e7eb'
                       }}>
                         <span style={{
-                          background: stat.yesPressed ? 'linear-gradient(145deg, #10b981 0%, #059669 100%)' : 'linear-gradient(145deg, #ef4444 0%, #dc2626 100%)',
+                          background: entry.yesPressed ? 'linear-gradient(145deg, #10b981 0%, #059669 100%)' : 'linear-gradient(145deg, #ef4444 0%, #dc2626 100%)',
                           color: 'white',
                           padding: '4px 8px',
                           borderRadius: '4px',
                           fontSize: '0.8rem',
                           fontWeight: '600'
                         }}>
-                          {stat.yesPressed ? 'YES' : 'NO'}
+                          {entry.yesPressed ? 'YES' : 'NO'}
                         </span>
                       </td>
                       <td style={{ 
@@ -376,7 +359,7 @@ export default function Admin() {
                         color: '#6b7280',
                         fontSize: '0.9rem'
                       }}>
-                        {new Date(stat.lastUpdated).toLocaleString()}
+                        {new Date(entry.timestamp).toLocaleString()}
                       </td>
                     </tr>
                   ))}
@@ -386,7 +369,7 @@ export default function Admin() {
           </div>
         )}
 
-        {names.length === 0 && buttonStats.length === 0 && (
+        {names.length === 0 && (
           <div style={{
             textAlign: 'center',
             padding: '40px',

@@ -5,7 +5,7 @@ let memoryStorage = [];
 
 export async function POST(request) {
   try {
-    const { name } = await request.json();
+    const { name, buttonStats } = await request.json();
     
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -18,7 +18,10 @@ export async function POST(request) {
       userAgent: request.headers.get('user-agent') || 'Unknown',
       ip: request.headers.get('x-forwarded-for') || 
           request.headers.get('x-real-ip') || 
-          'Unknown'
+          'Unknown',
+      // Add button statistics
+      noPresses: buttonStats?.noPresses || 0,
+      yesPressed: buttonStats?.yesPressed || false
     };
 
     // Add to memory storage
@@ -38,6 +41,8 @@ export async function POST(request) {
         console.log('KV not available, using memory storage');
       }
     }
+
+    console.log('Name with button stats saved:', newEntry);
 
     return NextResponse.json({ 
       success: true, 
@@ -69,6 +74,7 @@ export async function GET() {
       }
     }
 
+    console.log('Names retrieved:', names);
     return NextResponse.json({ names });
   } catch (error) {
     console.error('API Error:', error);

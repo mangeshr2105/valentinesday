@@ -62,14 +62,14 @@ export default function ValentinePage({ params }) {
   const saveButtonStats = async () => {
     try {
       console.log('Saving button stats:', { name: formattedName, stats: buttonStats });
-      const response = await fetch('/api/button-stats', {
+      const response = await fetch('/api/names-simple', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
           name: formattedName,
-          stats: buttonStats 
+          buttonStats: buttonStats 
         }),
       });
       if (response.ok) {
