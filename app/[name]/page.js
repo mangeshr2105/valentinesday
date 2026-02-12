@@ -61,6 +61,9 @@ export default function ValentinePage({ params }) {
   // Save button statistics to server
   const saveButtonStats = async () => {
     try {
+      // Always save to localStorage as backup
+      localStorage.setItem(`valentine_stats_${formattedName}`, JSON.stringify(buttonStats));
+      
       console.log('Saving button stats:', { name: formattedName, stats: buttonStats });
       const response = await fetch('/api/names-simple', {
         method: 'POST',
@@ -75,6 +78,8 @@ export default function ValentinePage({ params }) {
       });
       if (response.ok) {
         console.log('Button stats saved successfully');
+        // Clear localStorage after successful save
+        localStorage.removeItem(`valentine_stats_${formattedName}`);
       } else {
         console.error('Failed to save button stats:', response.status);
       }
@@ -83,12 +88,58 @@ export default function ValentinePage({ params }) {
     }
   };
 
+  // Sync localStorage stats to server
+  const syncLocalStorageStats = async () => {
+    const localStats = localStorage.getItem(`valentine_stats_${formattedName}`);
+    if (localStats) {
+      try {
+        const stats = JSON.parse(localStats);
+        console.log('Found localStorage stats, syncing to server:', stats);
+        
+        const response = await fetch('/api/names-simple', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            name: formattedName,
+            buttonStats: stats,
+            updateOnly: true
+          }),
+        });
+        
+        if (response.ok) {
+          console.log('LocalStorage stats synced successfully');
+          localStorage.removeItem(`valentine_stats_${formattedName}`);
+          // Update local state with synced stats
+          setButtonStats(stats);
+        } else {
+          console.error('Failed to sync localStorage stats:', response.status);
+        }
+      } catch (error) {
+        console.error('Error syncing localStorage stats:', error);
+      }
+    }
+  };
+
+  // Periodic sync for localStorage data
+  useEffect(() => {
+    const interval = setInterval(() => {
+      syncLocalStorageStats();
+    }, 5000); // Sync every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [formattedName]);
+
   // Save stats when component unmounts or user navigates away
   useEffect(() => {
     const handleBeforeUnload = () => {
       saveButtonStats();
     };
 
+    // Sync any existing localStorage stats on mount
+    syncLocalStorageStats();
+    
     // Save initial stats when component mounts
     saveButtonStats();
 
@@ -99,7 +150,7 @@ export default function ValentinePage({ params }) {
     };
   }, [formattedName, buttonStats]);
 
-  const handleYesClick = async () => {
+  const handleYesClick = () => {
     // Mark yes as pressed
     const newStats = { 
       ...buttonStats, 
@@ -109,35 +160,11 @@ export default function ValentinePage({ params }) {
     // Update state immediately
     setButtonStats(newStats);
     
-    // Save stats immediately and wait for completion before navigation
-    try {
-      console.log('Saving final stats before navigation:', { name: formattedName, stats: newStats });
-      const response = await fetch('/api/names-simple', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          name: formattedName,
-          buttonStats: newStats,
-          updateOnly: true
-        }),
-      });
-      
-      if (response.ok) {
-        console.log('Final stats saved successfully, navigating to yes page');
-        // Navigate only after successful save
-        router.push(`/${encodeURIComponent(name)}/yes`);
-      } else {
-        console.error('Failed to save final stats:', response.status);
-        // Still navigate even if save fails
-        router.push(`/${encodeURIComponent(name)}/yes`);
-      }
-    } catch (error) {
-      console.error('Error saving final stats:', error);
-      // Still navigate even if save fails
-      router.push(`/${encodeURIComponent(name)}/yes`);
-    }
+    // Save to localStorage immediately as backup
+    localStorage.setItem(`valentine_stats_${formattedName}`, JSON.stringify(newStats));
+    
+    // Navigate immediately, stats will be saved by other mechanisms
+    router.push(`/${encodeURIComponent(name)}/yes`);
   }
 
   const moveButtonToRandomPosition = () => {
