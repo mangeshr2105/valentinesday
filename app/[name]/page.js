@@ -99,18 +99,45 @@ export default function ValentinePage({ params }) {
     };
   }, [formattedName, buttonStats]);
 
-  const handleYesClick = () => {
+  const handleYesClick = async () => {
     // Mark yes as pressed
-    setButtonStats(prev => ({ 
-      ...prev, 
+    const newStats = { 
+      ...buttonStats, 
       yesPressed: true 
-    }))
+    };
     
-    // Save stats immediately when yes is pressed
-    setTimeout(() => {
-      saveButtonStats()
-      router.push(`/${encodeURIComponent(name)}/yes`)
-    }, 100)
+    // Update state immediately
+    setButtonStats(newStats);
+    
+    // Save stats immediately and wait for completion before navigation
+    try {
+      console.log('Saving final stats before navigation:', { name: formattedName, stats: newStats });
+      const response = await fetch('/api/names-simple', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          name: formattedName,
+          buttonStats: newStats,
+          updateOnly: true
+        }),
+      });
+      
+      if (response.ok) {
+        console.log('Final stats saved successfully, navigating to yes page');
+        // Navigate only after successful save
+        router.push(`/${encodeURIComponent(name)}/yes`);
+      } else {
+        console.error('Failed to save final stats:', response.status);
+        // Still navigate even if save fails
+        router.push(`/${encodeURIComponent(name)}/yes`);
+      }
+    } catch (error) {
+      console.error('Error saving final stats:', error);
+      // Still navigate even if save fails
+      router.push(`/${encodeURIComponent(name)}/yes`);
+    }
   }
 
   const moveButtonToRandomPosition = () => {

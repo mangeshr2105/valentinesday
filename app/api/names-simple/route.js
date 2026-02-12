@@ -16,12 +16,18 @@ export async function POST(request) {
       const existingIndex = memoryStorage.findIndex(entry => entry.name === name.trim());
       if (existingIndex >= 0) {
         // Update existing entry with new button stats
+        const oldEntry = memoryStorage[existingIndex];
         memoryStorage[existingIndex] = {
           ...memoryStorage[existingIndex],
-          noStateChanges: buttonStats?.noStateChanges || memoryStorage[existingIndex].noStateChanges || 0,
+          noStateChanges: buttonStats?.noStateChanges !== undefined ? buttonStats.noStateChanges : memoryStorage[existingIndex].noStateChanges || 0,
           yesPressed: buttonStats?.yesPressed !== undefined ? buttonStats.yesPressed : memoryStorage[existingIndex].yesPressed,
           lastUpdated: new Date().toISOString()
         };
+
+        console.log('Button stats updated for existing entry:');
+        console.log('Before:', oldEntry);
+        console.log('After:', memoryStorage[existingIndex]);
+        console.log('Received buttonStats:', buttonStats);
 
         // Try to use KV if available
         if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
@@ -33,14 +39,15 @@ export async function POST(request) {
           }
         }
 
-        console.log('Button stats updated for existing entry:', memoryStorage[existingIndex]);
-
         return NextResponse.json({ 
           success: true, 
           message: 'Button stats updated successfully',
           entry: memoryStorage[existingIndex],
           storage: 'memory'
         });
+      } else {
+        console.log('No existing entry found for name:', name.trim());
+        console.log('Current memoryStorage:', memoryStorage.map(e => e.name));
       }
     }
 
