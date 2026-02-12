@@ -5,10 +5,43 @@ let memoryStorage = [];
 
 export async function POST(request) {
   try {
-    const { name, buttonStats } = await request.json();
+    const { name, buttonStats, updateOnly } = await request.json();
     
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+    }
+
+    // If this is just a button stats update, find and update existing entry
+    if (updateOnly) {
+      const existingIndex = memoryStorage.findIndex(entry => entry.name === name.trim());
+      if (existingIndex >= 0) {
+        // Update existing entry with new button stats
+        memoryStorage[existingIndex] = {
+          ...memoryStorage[existingIndex],
+          noStateChanges: buttonStats?.noStateChanges || memoryStorage[existingIndex].noStateChanges || 0,
+          yesPressed: buttonStats?.yesPressed !== undefined ? buttonStats.yesPressed : memoryStorage[existingIndex].yesPressed,
+          lastUpdated: new Date().toISOString()
+        };
+
+        // Try to use KV if available
+        if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+          try {
+            const { kv } = await import('@vercel/kv');
+            await kv.set('valentine_names', memoryStorage);
+          } catch (kvError) {
+            console.log('KV not available, using memory storage');
+          }
+        }
+
+        console.log('Button stats updated for existing entry:', memoryStorage[existingIndex]);
+
+        return NextResponse.json({ 
+          success: true, 
+          message: 'Button stats updated successfully',
+          entry: memoryStorage[existingIndex],
+          storage: 'memory'
+        });
+      }
     }
 
     const newEntry = {

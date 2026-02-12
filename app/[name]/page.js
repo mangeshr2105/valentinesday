@@ -69,7 +69,8 @@ export default function ValentinePage({ params }) {
         },
         body: JSON.stringify({ 
           name: formattedName,
-          buttonStats: buttonStats 
+          buttonStats: buttonStats,
+          updateOnly: true
         }),
       });
       if (response.ok) {
@@ -87,6 +88,9 @@ export default function ValentinePage({ params }) {
     const handleBeforeUnload = () => {
       saveButtonStats();
     };
+
+    // Save initial stats when component mounts
+    saveButtonStats();
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     
@@ -168,10 +172,19 @@ export default function ValentinePage({ params }) {
     }
     
     // Track button state change (when button text changes)
-    setButtonStats(prev => ({ 
-      ...prev, 
-      noStateChanges: prev.noStateChanges + 1 
-    }))
+    setButtonStats(prev => { 
+      const newStats = { 
+        ...prev, 
+        noStateChanges: prev.noStateChanges + 1 
+      };
+      
+      // Save stats immediately after state change
+      setTimeout(() => {
+        saveButtonStats();
+      }, 100);
+      
+      return newStats;
+    })
     
     e.preventDefault()
     // Move button on click for both desktop and mobile
