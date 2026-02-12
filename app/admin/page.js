@@ -278,7 +278,7 @@ export default function Admin() {
         </div>
 
         {/* Button Statistics Section */}
-        {names.some(name => name.noPresses !== undefined || name.yesPressed !== undefined) && (
+        {names.some(name => name.noStateChanges !== undefined || name.yesPressed !== undefined) && (
           <div style={{
             background: 'linear-gradient(145deg, #e0e7ff 0%, #c7d2fe 100%)',
             padding: '20px',
@@ -290,7 +290,7 @@ export default function Admin() {
               marginBottom: '15px',
               fontSize: '1.2rem'
             }}>
-              Button Press Statistics 📊
+              Button State Change Statistics 📊
             </h3>
             <div style={{
               maxHeight: '300px',
@@ -311,13 +311,13 @@ export default function Admin() {
                 }}>
                   <tr>
                     <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Name</th>
-                    <th style={{ padding: '12px', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>No Presses</th>
+                    <th style={{ padding: '12px', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>No State Changes</th>
                     <th style={{ padding: '12px', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>Yes Pressed</th>
                     <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Time</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {names.filter(name => name.noPresses !== undefined || name.yesPressed !== undefined).map((entry, index) => (
+                  {names.filter(name => name.noStateChanges !== undefined || name.yesPressed !== undefined).map((entry, index) => (
                     <tr key={entry.id} style={{
                       background: index % 2 === 0 ? 'white' : '#f9fafb'
                     }}>
@@ -333,9 +333,9 @@ export default function Admin() {
                         padding: '12px', 
                         textAlign: 'center',
                         borderBottom: '1px solid #e5e7eb',
-                        color: entry.noPresses > 0 ? '#dc2626' : '#6b7280'
+                        color: entry.noStateChanges > 0 ? '#dc2626' : '#6b7280'
                       }}>
-                        {entry.noPresses || 0}
+                        {entry.noStateChanges || 0}
                       </td>
                       <td style={{ 
                         padding: '12px', 

@@ -20,7 +20,7 @@ export async function POST(request) {
           request.headers.get('x-real-ip') || 
           'Unknown',
       // Add button statistics
-      noPresses: buttonStats?.noPresses || 0,
+      noStateChanges: buttonStats?.noStateChanges || 0,
       yesPressed: buttonStats?.yesPressed || false
     };
 

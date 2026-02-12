@@ -17,7 +17,7 @@ export default function ValentinePage({ params }) {
   const [isMobile, setIsMobile] = useState(false)
   const [initialButtonPos, setInitialButtonPos] = useState({ x: 0, y: 0 })
   const [floatingHearts, setFloatingHearts] = useState([])
-  const [buttonStats, setButtonStats] = useState({ noPresses: 0, yesPressed: false })
+  const [buttonStats, setButtonStats] = useState({ noStateChanges: 0, yesPressed: false })
   const noButtonRef = useRef(null)
   const containerRef = useRef(null)
   const escapeLock = useRef(false)
@@ -167,10 +167,10 @@ export default function ValentinePage({ params }) {
       return
     }
     
-    // Track button press
+    // Track button state change (when button text changes)
     setButtonStats(prev => ({ 
       ...prev, 
-      noPresses: prev.noPresses + 1 
+      noStateChanges: prev.noStateChanges + 1 
     }))
     
     e.preventDefault()
