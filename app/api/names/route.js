@@ -1,48 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// Use Vercel KV for storage (works on free plan)
-const kv = {
-  async get(key) {
-    // For Vercel deployment, use environment variable or fallback to memory
-    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
-      try {
-        const response = await fetch(`${process.env.KV_REST_API_URL}/get/${key}`, {
-          headers: {
-            Authorization: `Bearer ${process.env.KV_REST_API_TOKEN}`,
-          },
-        });
-        const data = await response.json();
-        return data.result ? JSON.parse(data.result) : null;
-      } catch (error) {
-        console.error('KV get error:', error);
-        return null;
-      }
-    }
-    // Fallback for local development
-    return null;
-  },
-  
-  async set(key, value) {
-    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
-      try {
-        await fetch(`${process.env.KV_REST_API_URL}/set/${key}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${process.env.KV_REST_API_TOKEN}`,
-          },
-          body: JSON.stringify(value),
-        });
-        return true;
-      } catch (error) {
-        console.error('KV set error:', error);
-        return false;
-      }
-    }
-    // Fallback for local development - use file system
-    return false;
-  }
-};
+import { kv } from '@vercel/kv';
 
 export async function POST(request) {
   try {
@@ -54,9 +11,14 @@ export async function POST(request) {
 
     // Get existing names from KV
     let names = [];
-    const storedNames = await kv.get('valentine_names');
-    if (storedNames) {
-      names = storedNames;
+    try {
+      const storedNames = await kv.get('valentine_names');
+      if (storedNames) {
+        names = storedNames;
+      }
+    } catch (kvError) {
+      console.error('KV get error:', kvError);
+      // Continue with empty array if KV fails
     }
 
     const newEntry = {
@@ -77,25 +39,28 @@ export async function POST(request) {
     }
 
     // Store back to KV
-    const success = await kv.set('valentine_names', names);
-    
-    if (!success && process.env.NODE_ENV === 'development') {
+    try {
+      await kv.set('valentine_names', names);
+    } catch (kvError) {
+      console.error('KV set error:', kvError);
       // Fallback to file system for local development
-      try {
-        const fs = require('fs');
-        const path = require('path');
-        const dataDir = path.join(process.cwd(), 'data');
-        
-        if (!fs.existsSync(dataDir)) {
-          fs.mkdirSync(dataDir, { recursive: true });
+      if (process.env.NODE_ENV === 'development') {
+        try {
+          const fs = require('fs');
+          const path = require('path');
+          const dataDir = path.join(process.cwd(), 'data');
+          
+          if (!fs.existsSync(dataDir)) {
+            fs.mkdirSync(dataDir, { recursive: true });
+          }
+          
+          fs.writeFileSync(
+            path.join(dataDir, 'names.json'),
+            JSON.stringify(names, null, 2)
+          );
+        } catch (fsError) {
+          console.error('File system fallback error:', fsError);
         }
-        
-        fs.writeFileSync(
-          path.join(dataDir, 'names.json'),
-          JSON.stringify(names, null, 2)
-        );
-      } catch (error) {
-        console.error('File system fallback error:', error);
       }
     }
 
@@ -112,8 +77,17 @@ export async function POST(request) {
 
 export async function GET() {
   try {
+    let names = [];
+    
     // Try to get from KV first
-    let names = await kv.get('valentine_names');
+    try {
+      const storedNames = await kv.get('valentine_names');
+      if (storedNames) {
+        names = storedNames;
+      }
+    } catch (kvError) {
+      console.error('KV get error:', kvError);
+    }
     
     // Fallback to file system for development
     if (!names && process.env.NODE_ENV === 'development') {
@@ -126,12 +100,11 @@ export async function GET() {
           const data = fs.readFileSync(dataFile, 'utf8');
           names = JSON.parse(data);
         }
-      } catch (error) {
-        console.error('File system fallback error:', error);
+      } catch (fsError) {
+        console.error('File system fallback error:', fsError);
       }
     }
     
-    names = names || [];
     return NextResponse.json({ names });
   } catch (error) {
     console.error('API Error:', error);
@@ -142,18 +115,22 @@ export async function GET() {
 export async function DELETE() {
   try {
     // Clear in KV
-    const success = await kv.set('valentine_names', []);
-    
-    // Fallback to file system for development
-    if (!success && process.env.NODE_ENV === 'development') {
-      try {
-        const fs = require('fs');
-        const path = require('path');
-        const dataFile = path.join(process.cwd(), 'data', 'names.json');
-        
-        fs.writeFileSync(dataFile, JSON.stringify([], null, 2));
-      } catch (error) {
-        console.error('File system fallback error:', error);
+    try {
+      await kv.set('valentine_names', []);
+    } catch (kvError) {
+      console.error('KV delete error:', kvError);
+      
+      // Fallback to file system for development
+      if (process.env.NODE_ENV === 'development') {
+        try {
+          const fs = require('fs');
+          const path = require('path');
+          const dataFile = path.join(process.cwd(), 'data', 'names.json');
+          
+          fs.writeFileSync(dataFile, JSON.stringify([], null, 2));
+        } catch (fsError) {
+          console.error('File system fallback error:', fsError);
+        }
       }
     }
     
