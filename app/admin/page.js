@@ -7,6 +7,7 @@ export default function Admin() {
   const [names, setNames] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [buttonStats, setButtonStats] = useState([])
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState('')
   const router = useRouter()
@@ -19,6 +20,7 @@ export default function Admin() {
     if (auth === 'true') {
       setIsAuthenticated(true)
       fetchNames()
+      fetchButtonStats()
     }
   }, [])
 
@@ -41,6 +43,20 @@ export default function Admin() {
       setError('Error fetching names')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchButtonStats = async () => {
+    try {
+      const response = await fetch('/api/button-stats');
+      if (response.ok) {
+        const data = await response.json()
+        setButtonStats(data.stats || [])
+      } else {
+        console.error('Failed to fetch button stats')
+      }
+    } catch (err) {
+      console.error('Error fetching button stats:', err)
     }
   }
 
@@ -267,24 +283,118 @@ export default function Admin() {
           ) : (
             <div>
               <div style={{
-                background: 'linear-gradient(145deg, #fef3c7 0%, #fde68a 100%)',
-                padding: '15px',
-                borderRadius: '10px',
-                marginBottom: '20px',
-                textAlign: 'center'
-              }}>
-                <strong>Total Names: {names.length}</strong>
-              </div>
+          background: 'linear-gradient(145deg, #fef3c7 0%, #fde68a 100%)',
+          padding: '15px',
+          borderRadius: '10px',
+          marginBottom: '20px',
+          textAlign: 'center'
+        }}>
+          <strong>Total Names: {names.length}</strong>
+        </div>
 
-              {names.length === 0 ? (
-                <div style={{
-                  textAlign: 'center',
-                  padding: '40px',
-                  color: '#6b7280'
+        {/* Button Statistics Section */}
+        {buttonStats.length > 0 && (
+          <div style={{
+            background: 'linear-gradient(145deg, #e0e7ff 0%, #c7d2fe 100%)',
+            padding: '20px',
+            borderRadius: '10px',
+            marginBottom: '20px'
+          }}>
+            <h3 style={{
+              color: '#1e293b',
+              marginBottom: '15px',
+              fontSize: '1.2rem'
+            }}>
+              Button Press Statistics 📊
+            </h3>
+            <div style={{
+              maxHeight: '300px',
+              overflowY: 'auto',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              background: 'white'
+            }}>
+              <table style={{
+                width: '100%',
+                borderCollapse: 'collapse'
+              }}>
+                <thead style={{
+                  background: 'linear-gradient(145deg, #f8fafc 0%, #e5e7eb 100%)',
+                  position: 'sticky',
+                  top: 0,
+                  zIndex: 10
                 }}>
-                  No names stored yet. Share your Valentine's Day website to start collecting names! 💝
-                </div>
-              ) : (
+                  <tr>
+                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Name</th>
+                    <th style={{ padding: '12px', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>No Presses</th>
+                    <th style={{ padding: '12px', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>Yes Pressed</th>
+                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Last Updated</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {buttonStats.map((stat, index) => (
+                    <tr key={stat.name} style={{
+                      background: index % 2 === 0 ? 'white' : '#f9fafb'
+                    }}>
+                      <td style={{ 
+                        padding: '12px', 
+                        borderBottom: '1px solid #e5e7eb',
+                        fontWeight: '600',
+                        color: '#1e293b'
+                      }}>
+                        {stat.name}
+                      </td>
+                      <td style={{ 
+                        padding: '12px', 
+                        textAlign: 'center',
+                        borderBottom: '1px solid #e5e7eb',
+                        color: stat.noPresses > 0 ? '#dc2626' : '#6b7280'
+                      }}>
+                        {stat.noPresses}
+                      </td>
+                      <td style={{ 
+                        padding: '12px', 
+                        textAlign: 'center',
+                        borderBottom: '1px solid #e5e7eb'
+                      }}>
+                        <span style={{
+                          background: stat.yesPressed ? 'linear-gradient(145deg, #10b981 0%, #059669 100%)' : 'linear-gradient(145deg, #ef4444 0%, #dc2626 100%)',
+                          color: 'white',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          fontSize: '0.8rem',
+                          fontWeight: '600'
+                        }}>
+                          {stat.yesPressed ? 'YES' : 'NO'}
+                        </span>
+                      </td>
+                      <td style={{ 
+                        padding: '12px', 
+                        borderBottom: '1px solid #e5e7eb',
+                        color: '#6b7280',
+                        fontSize: '0.9rem'
+                      }}>
+                        {new Date(stat.lastUpdated).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {names.length === 0 && buttonStats.length === 0 && (
+          <div style={{
+            textAlign: 'center',
+            padding: '40px',
+            color: '#6b7280'
+          }}>
+            No data yet. Share your Valentine's Day website to start collecting names and button statistics! 💝
+          </div>
+        )}
+
+        {names.length > 0 && (
                 <div style={{
                   maxHeight: '600px',
                   overflowY: 'auto',

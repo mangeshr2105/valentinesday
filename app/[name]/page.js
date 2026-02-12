@@ -17,6 +17,7 @@ export default function ValentinePage({ params }) {
   const [isMobile, setIsMobile] = useState(false)
   const [initialButtonPos, setInitialButtonPos] = useState({ x: 0, y: 0 })
   const [floatingHearts, setFloatingHearts] = useState([])
+  const [buttonStats, setButtonStats] = useState({ noPresses: 0, yesPressed: false })
   const noButtonRef = useRef(null)
   const containerRef = useRef(null)
   const escapeLock = useRef(false)
@@ -57,10 +58,36 @@ export default function ValentinePage({ params }) {
     }
   }, [])
 
-  // Desktop: No longer needed since we're using click instead of hover
+  // Save button statistics to server
+  const saveButtonStats = async () => {
+    try {
+      await fetch('/api/button-stats', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          name: formattedName,
+          stats: buttonStats 
+        }),
+      });
+    } catch (error) {
+      console.error('Error saving button stats:', error);
+    }
+  };
+
+  // Save stats when component unmounts or user navigates away
   useEffect(() => {
-    // Empty effect - mouse tracking removed
-  }, [isMobile, escapeAttempts, initialButtonPos])
+    const handleBeforeUnload = () => {
+      saveButtonStats();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [formattedName, buttonStats]);
 
   const moveButtonToRandomPosition = () => {
     if (escapeLock.current) return
@@ -119,6 +146,12 @@ export default function ValentinePage({ params }) {
       e.stopPropagation()
       return
     }
+    
+    // Track button press
+    setButtonStats(prev => ({ 
+      ...prev, 
+      noPresses: prev.noPresses + 1 
+    }))
     
     e.preventDefault()
     // Move button on click for both desktop and mobile
