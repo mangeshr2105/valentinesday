@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Memory storage for button stats (same approach as names-simple)
+let memoryStats = [];
+
 export async function POST(request) {
   try {
     const { name, stats } = await request.json();
@@ -8,22 +11,6 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Name and stats are required' }, { status: 400 });
     }
 
-    // Get existing stats or create new entry
-    let allStats = [];
-    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
-      try {
-        const { kv } = await import('@vercel/kv');
-        const storedStats = await kv.get('button_stats');
-        if (storedStats) {
-          allStats = storedStats;
-        }
-      } catch (kvError) {
-        console.error('KV get error:', kvError);
-      }
-    }
-
-    // Find existing entry for this name or create new one
-    const existingIndex = allStats.findIndex(entry => entry.name === name);
     const newStatsEntry = {
       name,
       noPresses: stats.noPresses || 0,
@@ -31,33 +18,38 @@ export async function POST(request) {
       lastUpdated: new Date().toISOString()
     };
 
+    // Find existing entry for this name or create new one
+    const existingIndex = memoryStats.findIndex(entry => entry.name === name);
     if (existingIndex >= 0) {
       // Update existing entry
-      allStats[existingIndex] = newStatsEntry;
+      memoryStats[existingIndex] = newStatsEntry;
     } else {
       // Add new entry
-      allStats.unshift(newStatsEntry);
+      memoryStats.unshift(newStatsEntry);
     }
 
     // Keep only last 500 entries
-    if (allStats.length > 500) {
-      allStats = allStats.slice(0, 500);
+    if (memoryStats.length > 500) {
+      memoryStats = memoryStats.slice(0, 500);
     }
 
-    // Save to KV if available
+    // Try to use KV if available
     if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
       try {
         const { kv } = await import('@vercel/kv');
-        await kv.set('button_stats', allStats);
+        await kv.set('button_stats', memoryStats);
       } catch (kvError) {
-        console.error('KV set error:', kvError);
+        console.log('KV not available, using memory storage for stats');
       }
     }
+
+    console.log('Button stats saved:', newStatsEntry);
 
     return NextResponse.json({ 
       success: true, 
       message: 'Button stats saved successfully',
-      entry: newStatsEntry 
+      entry: newStatsEntry,
+      storage: process.env.KV_REST_API_URL ? 'kv' : 'memory'
     });
   } catch (error) {
     console.error('API Error:', error);
@@ -67,21 +59,23 @@ export async function POST(request) {
 
 export async function GET() {
   try {
-    let allStats = [];
+    let allStats = memoryStats;
     
     // Try to get from KV if available
     if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
       try {
         const { kv } = await import('@vercel/kv');
         const storedStats = await kv.get('button_stats');
-        if (storedStats) {
+        if (storedStats && storedStats.length > 0) {
           allStats = storedStats;
+          memoryStats = storedStats; // Sync memory storage
         }
       } catch (kvError) {
-        console.error('KV get error:', kvError);
+        console.log('KV not available, using memory storage for stats');
       }
     }
     
+    console.log('Button stats retrieved:', allStats);
     return NextResponse.json({ stats: allStats });
   } catch (error) {
     console.error('API Error:', error);
