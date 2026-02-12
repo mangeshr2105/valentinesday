@@ -128,20 +128,20 @@ export default function ValentinePage({ params }) {
   const getNoButtonText = () => {
     const texts = [
       'No 💔🥺',
-      'Wait… are you sure? 😏',
-      'Arre soch lo phir se 😌',
-      'Really?? 😳',
-      'Itni jaldi no bol diya? 😏',
-      'Try again 😂',
-      'You sure about that? 👀',
-      'Dil tod dogi kya? 💔🥺',
-      'Ha ha, nice try! 😜',
-      'Retry maar lo na once more 😜',
-      'No escape! 😈',
-      'Ab toh haan bol do yaar 💖',
-      'Bas karo… destiny likh chuki hai ✨💘',
-      'System says: Wrong answer 😤',
-      "You can't escape my love! 💘",
+      'No Wait… are you sure? 😏',
+      'No Arre soch lo phir se 😌',
+      'No Really?? 😳',
+      'No Itni jaldi no bol diya? 😏',
+      'No Try again 😂',
+      'No You sure about that? 👀',
+      'No Dil tod dogi kya? 💔🥺',
+      'No Ha ha, nice try! 😜',
+      'No Retry maar lo na once more 😜',
+      'No Sach me?? 😈',
+      'No Ab toh haan bol do yaar 💖',
+      'No Bas karo… destiny likh chuki hai ✨💘',
+      'No System says: Wrong answer 😤',
+      "No you can't escape my love! 💘",
     ]
 
     return texts[Math.min(escapeAttempts, texts.length - 1)]
@@ -363,10 +363,17 @@ export default function ValentinePage({ params }) {
                 opacity: isButtonDisabled ? 0.7 : 1,
                 pointerEvents: isButtonDisabled ? 'none' : 'auto',
                 position: 'relative',
-                transform: 'translateY(0)'
+                transform: 'translateY(0)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '2px'
               }}
             >
-              {getNoButtonText()}
+              <span style={{ fontSize: '0.7em', lineHeight: '1.2' }}>
+                {getNoButtonText().replace('No ', '')}
+              </span>
+              <span style={{ fontSize: '1.3em', fontWeight: '700' }}>No</span>
             </button>
           </div>
         </div>

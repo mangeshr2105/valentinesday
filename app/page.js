@@ -5,12 +5,56 @@ import { useRouter } from "next/navigation";
 export default function Home() {
   const [floatingHearts, setFloatingHearts] = useState([]);
   const [name, setName] = useState("");
+  const [recentNames, setRecentNames] = useState([]);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleStart = () => {
+  // Load recent names from API on mount
+  useEffect(() => {
+    fetchRecentNames();
+  }, []);
+
+  const fetchRecentNames = async () => {
+    try {
+      const response = await fetch('/api/names');
+      if (response.ok) {
+        const data = await response.json();
+        setRecentNames(data.names.slice(0, 10)); // Show only last 10
+      }
+    } catch (error) {
+      console.error('Error fetching recent names:', error);
+    }
+  };
+
+  const handleStart = async () => {
     if (!name.trim()) return;
-    const slug = encodeURIComponent(name.trim());
-    router.push(`/${slug}`);
+    
+    setLoading(true);
+    
+    try {
+      // Store name on server
+      const response = await fetch('/api/names', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: name.trim() }),
+      });
+
+      if (response.ok) {
+        // Name stored successfully
+        console.log('Name stored successfully');
+      } else {
+        console.error('Failed to store name');
+      }
+    } catch (error) {
+      console.error('Error storing name:', error);
+    } finally {
+      setLoading(false);
+      // Navigate to Valentine page regardless of storage success
+      const slug = encodeURIComponent(name.trim());
+      router.push(`/${slug}`);
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -69,8 +113,13 @@ export default function Home() {
           onKeyPress={handleKeyPress}
           style={styles.input}
         />
-        <button style={styles.startBtn} className="start-button" onClick={handleStart}>
-          Start 💘
+        <button 
+          style={loading ? { ...styles.startBtn, opacity: 0.7, cursor: 'not-allowed' } : styles.startBtn} 
+          className="start-button" 
+          onClick={handleStart}
+          disabled={loading}
+        >
+          {loading ? 'Saving... 💘' : 'Start 💘'}
         </button>
       </div>
 
