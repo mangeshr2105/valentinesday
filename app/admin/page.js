@@ -25,7 +25,12 @@ export default function Admin() {
   const fetchNames = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/names')
+      // Try simple API first, then fallback to original
+      let response = await fetch('/api/names-simple');
+      if (!response.ok) {
+        response = await fetch('/api/names');
+      }
+      
       if (response.ok) {
         const data = await response.json()
         setNames(data.names || [])
@@ -71,7 +76,12 @@ export default function Admin() {
   const clearData = async () => {
     if (confirm('Are you sure you want to clear all names? This cannot be undone.')) {
       try {
-        const response = await fetch('/api/names', { method: 'DELETE' })
+        // Try simple API first
+        let response = await fetch('/api/names-simple', { method: 'DELETE' });
+        if (!response.ok) {
+          response = await fetch('/api/names', { method: 'DELETE' });
+        }
+        
         if (response.ok) {
           setNames([])
           alert('All names cleared successfully')
