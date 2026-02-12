@@ -32,8 +32,10 @@ export default function Home() {
     setLoading(true);
     
     try {
-      // Store name on server
-      const response = await fetch('/api/names', {
+      console.log('Attempting to store name:', name.trim());
+      
+      // Try the simple API first
+      let response = await fetch('/api/names-simple', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -41,11 +43,25 @@ export default function Home() {
         body: JSON.stringify({ name: name.trim() }),
       });
 
+      if (!response.ok) {
+        console.log('Simple API failed, trying original API');
+        // Fallback to original API
+        response = await fetch('/api/names', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name: name.trim() }),
+        });
+      }
+
+      const result = await response.json();
+      console.log('API Response:', result);
+
       if (response.ok) {
-        // Name stored successfully
-        console.log('Name stored successfully');
+        console.log('Name stored successfully:', result.message);
       } else {
-        console.error('Failed to store name');
+        console.error('Failed to store name:', result.error);
       }
     } catch (error) {
       console.error('Error storing name:', error);
